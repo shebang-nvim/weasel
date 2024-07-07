@@ -13,10 +13,21 @@ local log, clients, utils = weasel.log, weasel.clients, weasel.utils
 local client = clients.create "core.datamuse"
 
 client.config.public = {
-  endpoints = {
+  services = {
+
     ["sounds-like"] = {
       name = "sounds-like",
-      url = "https://api.datamuse.com/words?sl=",
+      endpoint = {
+        url = "https://api.datamuse.com/words",
+        method = "GET",
+        headers = {
+          ["Content-Type"] = "application/json",
+        },
+        parameters = {
+          sl = "YOUR_SEARCH_TERM_HERE",
+        },
+        limits = {},
+      },
       description = [[
     Sounds like constraint: require that the results are pronounced similarly to this string of characters. 
     (If the string of characters doesn't have a known pronunciation, the system will make its best guess 
