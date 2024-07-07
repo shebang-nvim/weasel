@@ -7,8 +7,8 @@
     WIP
 --]]
 
-local weasle = require "weasle.core"
-local log, clients, utils = weasle.log, weasle.clients, weasle.utils
+local weasel = require "weasel.core"
+local log, clients, utils = weasel.log, weasel.clients, weasel.utils
 
 local client = clients.create "core.datamuse"
 

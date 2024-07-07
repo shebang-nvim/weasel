@@ -1,5 +1,5 @@
 --- Defines a client.
---- @class (exact) weasle.client
+--- @class (exact) weasel.client
 --- @field config? table
 --- @field events? table
 --- @field name string The name of the client.
@@ -9,12 +9,12 @@
 
 local clients = {}
 
---- Returns a new weasle client, exposing all the necessary function and variables.
+--- Returns a new weasel client, exposing all the necessary function and variables.
 --- @param name string The name of the new client.
---- @return weasle.client
+--- @return weasel.client
 function clients.create(name)
   ---create a new client
-  ---@type weasle.client
+  ---@type weasel.client
   local new_client = {
     service = "",
     name = "",

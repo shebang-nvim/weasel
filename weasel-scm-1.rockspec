@@ -1,18 +1,18 @@
 local MODREV, SPECREV = "scm", "-1"
 rockspec_format = "3.0"
-package = "weasle"
+package = "weasel"
 version = MODREV .. SPECREV
 
 source = {
-  url = "http://github.com/shborg/neorg/archive/v" .. MODREV .. ".zip",
+  url = "https://github.com/shebang-nvim/weasel/archive/v" .. MODREV .. ".zip",
 }
 description = {
   summary = "An API client supporting pluggable API connectors.",
   detailed = [[
-      Weasle is a Lua libary for talking to web services using pluggable connectors.
+      weasel is a Lua libary for talking to web services using pluggable connectors.
       It supports async opperations, JSON and various common service endpoints.
    ]],
-  homepage = "https://github.com/shborg/weasle",
+  homepage = "http://github.com/shebang-nvim/weasel",
   license = "MIT",
 }
 dependencies = {
@@ -34,10 +34,10 @@ test = {
 local function make_plat(plat)
   local defines = {
     unix = {
-      "WEASLE_DEBUG",
+      "weasel_DEBUG",
     },
     macosx = {
-      "WEASLE_DEBUG",
+      "weasel_DEBUG",
     },
   }
 end
@@ -45,8 +45,8 @@ build = {
   type = "builtin",
   modules = {
 
-    ["weasle"] = "lua/weasle/init.lua",
-    ["weasle.client"] = "lua/weasle/client.lua",
+    ["weasel"] = "lua/weasel/init.lua",
+    ["weasel.client"] = "lua/weasel/client.lua",
   },
   platforms = {
     unix = make_plat "unix",
