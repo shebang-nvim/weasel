@@ -7,7 +7,7 @@ source = {
   url = "https://github.com/shebang-nvim/weasel/archive/v" .. MODREV .. ".zip",
 }
 description = {
-  summary = "An API client supporting pluggable API connectors.",
+  summary = "An API module supporting pluggable API connectors.",
   detailed = [[
       weasel is a Lua libary for talking to web services using pluggable connectors.
       It supports async opperations, JSON and various common service endpoints.
@@ -23,9 +23,12 @@ dependencies = {
   "tableshape",
   "luasocket",
   "luasec",
+  "nvim-nio ~> 1.7",
+  "pathlib.nvim ~> 2.2",
 }
 test_dependencies = {
   "busted",
+  "busted-htest",
 }
 test = {
   type = "busted",
@@ -45,8 +48,8 @@ build = {
   type = "builtin",
   modules = {
 
-    ["weasel"] = "lua/weasel/init.lua",
-    ["weasel.client"] = "lua/weasel/client.lua",
+    -- ["weasel"] = "lua/weasel/init.lua",
+    -- ["weasel.module"] = "lua/weasel/module.lua",
   },
   platforms = {
     unix = make_plat "unix",

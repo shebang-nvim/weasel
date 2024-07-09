@@ -12,4 +12,15 @@ return {
   tests = {
     verbose = true,
   },
+  unit = {
+    tags = "unit",
+    ROOT = { "spec/unit" },
+    verbose = true,
+  },
+
+  integration = {
+    tags = "integration",
+    ROOT = { "spec/integration" },
+    verbose = true,
+  },
 }
