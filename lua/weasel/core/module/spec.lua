@@ -24,19 +24,12 @@ M.schema.module = types.shape {
 M.schema.modules = {}
 
 M.schema.modules.provider = types.shape {
-  -- type = types.one_of { types.literal "provider", types.literal "auth" },
-  -- name = types.string,
-  -- enabled = types.boolean:is_optional(),
-  -- post_load = types.func:is_optional(),
-  -- setup = types.func:is_optional(),
   services = types.map_of(
     types.string,
     types.shape {
-
       description = types.string,
       name = types.string,
       endpoint = types.shape {
-
         url = M.schema.composables.url,
         method = types.one_of { types.literal "GET", types.literal "POST" },
         limits = types.shape({}):is_optional(),

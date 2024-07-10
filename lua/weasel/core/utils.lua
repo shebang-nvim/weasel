@@ -1,8 +1,18 @@
 local configuration = require "weasel.core.config"
 local log = require "weasel.core.log"
+local vim_compat = require "weasel.lib.vim_compat"
 
 local utils = {}
 local version = vim.version() -- TODO: Move to a more local scope
+
+utils.tbl_keys = vim_compat.tbl_keys
+utils.tbl_values = vim_compat.tbl_values
+utils.tbl_isempty = vim_compat.tbl_isempty
+utils.tbl_contains = vim_compat.tbl_contains
+utils.tbl_deep_extend = vim_compat.tbl_deep_extend
+utils.validate = vim_compat.validate
+utils.deepcopy = vim_compat.deepcopy
+utils.endswith = vim_compat.endswith
 
 -- NOTE: vim.loop has been renamed to vim.uv in Neovim >= 0.10 and will be removed later
 local uv = vim.uv or vim.loop
@@ -156,283 +166,16 @@ function utils.url_params(keys, values)
   return fields
 end
 
---- Tests if `s` ends with `suffix`.
----
----@param s string String
----@param suffix string Suffix to match
----@return boolean `true` if `suffix` is a suffix of `s`
-function utils.endswith(s, suffix)
-  utils.validate("s", s, "string")
-  utils.validate("suffix", suffix, "string")
-  return #suffix == 0 or s:sub(-#suffix) == suffix
+local json = {}
+
+function json.decode(data)
+  local ok, cjson = pcall(require, "cjson")
+  local decode = (ok and cjson and cjson.decode) and cjson.decode
+    or (vim and vim.json and vim.json.decode) and vim.json.decode
+  return decode(data)
 end
 
-do
-  --- @alias weasel.core.utils.Type
-  --- | 't' | 'table'
-  --- | 's' | 'string'
-  --- | 'n' | 'number'
-  --- | 'f' | 'function'
-  --- | 'c' | 'callable'
-  --- | 'nil'
-  --- | 'thread'
-  --- | 'userdata
-
-  local type_names = {
-    ["table"] = "table",
-    t = "table",
-    ["string"] = "string",
-    s = "string",
-    ["number"] = "number",
-    n = "number",
-    ["boolean"] = "boolean",
-    b = "boolean",
-    ["function"] = "function",
-    f = "function",
-    ["callable"] = "callable",
-    c = "callable",
-    ["nil"] = "nil",
-    ["thread"] = "thread",
-    ["userdata"] = "userdata",
-  }
-
-  --- @nodoc
-  --- @class weasel.core.utils.Spec [any, string|string[], boolean]
-  --- @field [1] any Argument value
-  --- @field [2] string|string[]|fun(v:any):boolean, string? Type name, or callable
-  --- @field [3]? boolean
-
-  local function _is_type(val, t)
-    return type(val) == t or (t == "callable" and vim.is_callable(val))
-  end
-
-  --- @param param_name string
-  --- @param spec weasel.core.utils.Spec
-  --- @return string?
-  local function is_param_valid(param_name, spec)
-    if type(spec) ~= "table" then
-      return string.format("opt[%s]: expected table, got %s", param_name, type(spec))
-    end
-
-    local val = spec[1] -- Argument value
-    local types = spec[2] -- Type name, or callable
-    local optional = (true == spec[3])
-
-    if type(types) == "string" then
-      types = { types }
-    end
-
-    if vim.is_callable(types) then
-      -- Check user-provided validation function
-      local valid, optional_message = types(val)
-      if not valid then
-        local error_message = string.format("%s: expected %s, got %s", param_name, (spec[3] or "?"), tostring(val))
-        if optional_message ~= nil then
-          error_message = string.format("%s. Info: %s", error_message, optional_message)
-        end
-
-        return error_message
-      end
-    elseif type(types) == "table" then
-      local success = false
-      for i, t in ipairs(types) do
-        local t_name = type_names[t]
-        if not t_name then
-          return string.format("invalid type name: %s", t)
-        end
-        types[i] = t_name
-
-        if (optional and val == nil) or _is_type(val, t_name) then
-          success = true
-          break
-        end
-      end
-      if not success then
-        return string.format("%s: expected %s, got %s", param_name, table.concat(types, "|"), type(val))
-      end
-    else
-      return string.format("invalid type name: %s", tostring(types))
-    end
-  end
-
-  --- @param opt table<weasel.core.utils.Type,weasel.core.utils.Spec>
-  --- @return boolean, string?
-  local function is_valid(opt)
-    if type(opt) ~= "table" then
-      return false, string.format("opt: expected table, got %s", type(opt))
-    end
-
-    local report --- @type table<string,string>?
-
-    for param_name, spec in pairs(opt) do
-      local msg = is_param_valid(param_name, spec)
-      if msg then
-        report = report or {}
-        report[param_name] = msg
-      end
-    end
-
-    if report then
-      for _, msg in vim.spairs(report) do -- luacheck: ignore
-        return false, msg
-      end
-    end
-
-    return true
-  end
-
-  --- Validate function arguments.
-  ---
-  --- This function has two valid forms:
-  ---
-  --- 1. weasel.core.utils(name: str, value: any, type: string, optional?: bool)
-  --- 2. weasel.core.utils(spec: table)
-  ---
-  --- Form 1 validates that argument {name} with value {value} has the type
-  --- {type}. {type} must be a value returned by |lua-type()|. If {optional} is
-  --- true, then {value} may be null. This form is significantly faster and
-  --- should be preferred for simple cases.
-  ---
-  --- Example:
-  ---
-  --- ```lua
-  --- function vim.startswith(s, prefix)
-  ---   weasel.core.utils('s', s, 'string')
-  ---   weasel.core.utils('prefix', prefix, 'string')
-  ---   ...
-  --- end
-  --- ```
-  ---
-  --- Form 2 validates a parameter specification (types and values). Specs are
-  --- evaluated in alphanumeric order, until the first failure.
-  ---
-  --- Usage example:
-  ---
-  --- ```lua
-  --- function user.new(name, age, hobbies)
-  ---   weasel.core.utils{
-  ---     name={name, 'string'},
-  ---     age={age, 'number'},
-  ---     hobbies={hobbies, 'table'},
-  ---   }
-  ---   ...
-  --- end
-  --- ```
-  ---
-  --- Examples with explicit argument values (can be run directly):
-  ---
-  --- ```lua
-  --- weasel.core.utils{arg1={{'foo'}, 'table'}, arg2={'foo', 'string'}}
-  ---    --> NOP (success)
-  ---
-  --- weasel.core.utils{arg1={1, 'table'}}
-  ---    --> error('arg1: expected table, got number')
-  ---
-  --- weasel.core.utils{arg1={3, function(a) return (a % 2) == 0 end, 'even number'}}
-  ---    --> error('arg1: expected even number, got 3')
-  --- ```
-  ---
-  --- If multiple types are valid they can be given as a list.
-  ---
-  --- ```lua
-  --- weasel.core.utils{arg1={{'foo'}, {'table', 'string'}}, arg2={'foo', {'table', 'string'}}}
-  --- -- NOP (success)
-  ---
-  --- weasel.core.utils{arg1={1, {'string', 'table'}}}
-  --- -- error('arg1: expected string|table, got number')
-  --- ```
-  ---
-  ---@param opt table<weasel.core.utils.Type,weasel.core.utils.Spec> (table) Names of parameters to validate. Each key is a parameter
-  ---          name; each value is a tuple in one of these forms:
-  ---          1. (arg_value, type_name, optional)
-  ---             - arg_value: argument value
-  ---             - type_name: string|table type name, one of: ("table", "t", "string",
-  ---               "s", "number", "n", "boolean", "b", "function", "f", "nil",
-  ---               "thread", "userdata") or list of them.
-  ---             - optional: (optional) boolean, if true, `nil` is valid
-  ---          2. (arg_value, fn, msg)
-  ---             - arg_value: argument value
-  ---             - fn: any function accepting one argument, returns true if and
-  ---               only if the argument is valid. Can optionally return an additional
-  ---               informative error message as the second returned value.
-  ---             - msg: (optional) error string if validation fails
-  --- @overload fun(name: string, val: any, expected: string, optional?: boolean)
-  function utils.validate(opt, ...)
-    local ok = false
-    local err_msg ---@type string?
-    local narg = select("#", ...)
-    if narg == 0 then
-      ok, err_msg = is_valid(opt)
-    elseif narg >= 2 then
-      -- Overloaded signature for fast/simple cases
-      local name = opt --[[@as string]]
-      local v, expected, optional = ... ---@type string, string, boolean?
-      local actual = type(v)
-
-      ok = (actual == expected) or (v == nil and optional == true)
-      if not ok then
-        err_msg = ("%s: expected %s, got %s%s"):format(name, expected, actual, v and (" (%s)"):format(v) or "")
-      end
-    else
-      error "invalid arguments"
-    end
-
-    if not ok then
-      error(err_msg, 2)
-    end
-  end
-end
---- Returns true if object `f` can be called as a function.
----
----@param f any Any object
----@return boolean `true` if `f` is callable, else `false`
-function utils.is_callable(f)
-  if type(f) == "function" then
-    return true
-  end
-  local m = getmetatable(f)
-  if m == nil then
-    return false
-  end
-  return type(m.__call) == "function"
-end
-
---- Return a list of all keys used in a table.
---- However, the order of the return table of keys is not guaranteed.
----
----@see From https://github.com/premake/premake-core/blob/master/src/base/table.lua
----
----@generic T
----@param t table<T, any> (table) Table
----@return T[] : List of keys
-function utils.tbl_keys(t)
-  utils.validate("t", t, "table")
-  --- @cast t table<any,any>
-
-  local keys = {}
-  for k in pairs(t) do
-    table.insert(keys, k)
-  end
-  return keys
-end
-
---- Return a list of all values used in a table.
---- However, the order of the return table of values is not guaranteed.
----
----@generic T
----@param t table<any, T> (table) Table
----@return T[] : List of values
-function utils.tbl_values(t)
-  utils.validate("t", t, "table")
-
-  local values = {}
-  for _, v in
-    pairs(t --[[@as table<any,any>]])
-  do
-    table.insert(values, v)
-  end
-  return values
-end
+utils.json = json
 
 --- Default transformers for statistics
 local transform = {

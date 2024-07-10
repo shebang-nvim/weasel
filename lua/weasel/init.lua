@@ -31,29 +31,30 @@
 ---@field client fun(...:any):table
 ---@field config weasel.configuration
 local weasel = {
-	__class = "weasel",
+  __class = "weasel",
 }
+local utils = require "weasel.core.utils"
 
 --- Initializes weasel. Parses the supplied user configuration, initializes all selected modules.
 --- @param cfg weasel.configuration A table that reflects the structure of `config.user_config`.
 --- @see config.user_config
 --- @see weasel.configuration.user
 local function init(cfg)
-	local loader = require("weasel.loader")
-	local core = require("weasel.core")
-	local config, log = core.config, core.log
+  local loader = require "weasel.loader"
+  local core = require "weasel.core"
+  local config, log = core.config, core.log
 
-	-- Create a new global instance of the weasel logger.
-	log.new(config.user_config.logger or log.get_default_config(), true)
+  -- Create a new global instance of the weasel logger.
+  log.new(config.user_config.logger or log.get_default_config(), true)
 
-	--- library exports
-	---@type weasel
-	return setmetatable(weasel, {
-		-- __call = function(_, ...) end,
-		__index = function(t, k)
-			return loader.handle_api_access(t, k)
-		end,
-	})
+  --- library exports
+  ---@type weasel
+  return setmetatable(weasel, {
+    -- __call = function(_, ...) end,
+    __index = function(t, k)
+      return loader.handle_api_access(t, k)
+    end,
+  })
 end
 
 --- Initializes weasel. Parses the supplied user configuration, initializes all selected modules.
@@ -61,29 +62,29 @@ end
 --- @see config.user_config
 --- @see weasel.configuration.user
 function weasel.setup(cfg)
-	local config = require("weasel.core.config")
+  local config = require "weasel.core.config"
 
-	-- If the user supplied no configuration then generate a default one (assume the user wants the defaults)
-	cfg = cfg or config.user_config
+  -- If the user supplied no configuration then generate a default one (assume the user wants the defaults)
+  cfg = cfg or config.user_config
 
-	-- If no `load` table was passed whatsoever then assume the user wants the default ones.
-	-- If the user explicitly sets `load = {}` in their configs then that means they do not want
-	-- any modules loaded.
-	--
-	-- We check for nil specifically because some users might think `load = false` is a valid thing.
-	-- With the explicit check `load = false` will issue an error.
-	if cfg.load == nil then
-		cfg = config.user_config.load
-	end
+  -- If no `load` table was passed whatsoever then assume the user wants the default ones.
+  -- If the user explicitly sets `load = {}` in their configs then that means they do not want
+  -- any modules loaded.
+  --
+  -- We check for nil specifically because some users might think `load = false` is a valid thing.
+  -- With the explicit check `load = false` will issue an error.
+  if cfg.load == nil then
+    cfg = config.user_config.load
+  end
 
-	-- TODO: parse environment vars
-	-- If the user has supplied any weasel environment variables
-	-- then parse those here
+  -- TODO: parse environment vars
+  -- If the user has supplied any weasel environment variables
+  -- then parse those here
 
-	config.user_config = vim.tbl_deep_extend("force", config.user_config, cfg)
-	weasel.config = config
+  config.user_config = utils.tbl_deep_extend("force", config.user_config, cfg)
+  weasel.config = config
 
-	return init(config)
+  return init(config)
 end
 
 -- return setmetatable({}, {

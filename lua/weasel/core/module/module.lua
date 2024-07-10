@@ -2,12 +2,7 @@
 local Module = {}
 
 local log = require "weasel.core.log"
-
-local Registry = {
-  modules = {
-    loaded = {},
-  },
-}
+local loader = require "weasel.core.module.loader"
 
 ---@class weasel.core.module.Module
 ---@field name string
@@ -21,7 +16,6 @@ Module = setmetatable({}, { ---@diagnostic disable-line: cast-local-type
     return Module:new(...)
   end,
 })
-Module.count_loaded = 0
 -- Module.__index = Module
 
 ---@class weasel.core.module.Spec
@@ -56,20 +50,9 @@ end
 
 ---comment
 --- @param handle weasel.module.handle
---- @return boolean
-function Module.is_loaded(handle)
-  return Registry.modules.loaded[handle.path] ~= nil
-end
-
----comment
---- @param handle weasel.module.handle
 --- @return boolean, weasel.core.module.Module
 function Module.load(handle)
-  if Module.is_loaded(handle) then
-    return true, Module.get(handle)
-  end
-
-  local ok, mod = require("weasel.core.module.loader").load_module(handle)
+  local ok, mod = loader.load_module(handle)
   if not ok then
     return false, mod
   end
@@ -77,9 +60,6 @@ function Module.load(handle)
   mod:validate()
   local obj = Module:new(mod)
 
-  Registry.modules.loaded[handle.path] = obj
-
-  Module.count_loaded = Module.count_loaded + 1
   return true, obj
 end
 
@@ -88,17 +68,12 @@ end
 --- @param handle weasel.module.handle
 --- @return weasel.core.module.Module
 function Module.get(handle)
-  if Module.is_loaded(handle) then
-    return Registry.modules.loaded[handle.path]
-  end
-
   local ok, mod = Module.load(handle)
   if not ok then
     log.error(mod)
     error(mod)
   end
 
-  -- log.debug("successfully loaded module", mod)
   return mod
 end
 

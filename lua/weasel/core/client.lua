@@ -64,8 +64,6 @@ Client = setmetatable({}, { ---@diagnostic disable-line: cast-local-type
 ---@param module weasel.core.module.Module
 ---@return weasel.core.Client
 function Client:new(module)
-  -- vim.print("Client:new", module)
-
   if module.type ~= "provider" then
     error("invalid module type: " .. tostring(module.type))
   end
@@ -108,13 +106,6 @@ local function make_service_requestor(opts)
 end
 
 Client.methods = {}
-Client.methods.async_test = function(val)
-  return promise:new(function(resolve, reject)
-    vim.defer_fn(function()
-      resolve { success = true }
-    end, 500)
-  end)
-end
 
 ---comment
 ---@param module weasel.core.module.Module

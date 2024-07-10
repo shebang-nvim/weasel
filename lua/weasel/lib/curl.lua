@@ -11,6 +11,7 @@ local client = {}
 local found_curl, curl = pcall(require, "cURL.safe")
 
 local utils = require "weasel.core.utils"
+local log = require "weasel.core.log"
 
 -- TODO: add support for running multiple requests at once for `:Rest run document`
 -- TODO: add support for submitting forms in the `client.request` function
@@ -117,15 +118,13 @@ end
 ---@param statistics_tbl RestConfigResultStats Statistics table
 ---@return table Request statistics
 local function get_stats(req, statistics_tbl)
-  local logger = _G._rest_nvim.logger
-
   local stats = {}
 
   local function get_stat(req_, stat_)
     local curl_info = curl["INFO_" .. stat_:upper()]
     if not curl_info then
       ---@diagnostic disable-next-line need-check-nil
-      logger:error(
+      log.error(
         "The cURL request stat field '"
           .. stat_ "' was not found.\nPlease take a look at: https://curl.se/libcurl/c/curl_easy_getinfo.html"
       )
@@ -163,18 +162,17 @@ end
 ---@return table The request information (url, method, headers, body, etc)
 function client.request(request)
   local ret = {}
-  local logger = _G._rest_nvim.logger
 
   if not found_curl then
     ---@diagnostic disable-next-line need-check-nil
-    logger:error "lua-curl could not be found, therefore the cURL client will not work."
+    log.error "lua-curl could not be found, therefore the cURL client will not work."
   else
     -- If Host header exists then we need to tweak the request url
-    if vim.tbl_contains(vim.tbl_keys(request.headers), "Host") then
+    if utils.tbl_contains(utils.tbl_keys(request.headers), "Host") then
       ---@diagnostic disable-next-line inject-field
       request.request.url = request.headers["Host"] .. request.request.url
       request.headers["Host"] = nil
-    elseif vim.tbl_contains(vim.tbl_keys(request.headers), "host") then
+    elseif utils.tbl_contains(utils.tbl_keys(request.headers), "host") then
       ---@diagnostic disable-next-line inject-field
       request.request.url = request.headers["host"] .. request.request.url
       request.headers["host"] = nil
@@ -198,22 +196,22 @@ function client.request(request)
     }
 
     -- Encode URL query parameters and set the request URL again with the encoded values
-    local should_encode_url = _G._rest_nvim.encode_url
-    if should_encode_url then
-      -- Create a new URL as we cannot extract the URL from the req object
-      local _url = curl.url()
-      _url:set_url(request.request.url)
-      -- Re-add the request query with the encoded parameters
-      local query = _url:get_query()
-      if type(query) == "string" then
-        _url:set_query ""
-        for param in vim.gsplit(query, "&") do
-          _url:set_query(param, curl.U_URLENCODE + curl.U_APPENDQUERY)
-        end
-      end
-      -- Re-add the request URL to the req object
-      req:setopt_url(_url:get_url())
-    end
+    -- local should_encode_url = _G._rest_nvim.encode_url
+    -- if should_encode_url then
+    --   -- Create a new URL as we cannot extract the URL from the req object
+    --   local _url = curl.url()
+    --   _url:set_url(request.request.url)
+    --   -- Re-add the request query with the encoded parameters
+    --   local query = _url:get_query()
+    --   if type(query) == "string" then
+    --     _url:set_query ""
+    --     for param in vim.gsplit(query, "&") do
+    --       _url:set_query(param, curl.U_URLENCODE + curl.U_APPENDQUERY)
+    --     end
+    --   end
+    --   -- Re-add the request URL to the req object
+    --   req:setopt_url(_url:get_url())
+    -- end
 
     -- Set request HTTP version, defaults to HTTP/1.1
     if request.request.http_version then
@@ -226,7 +224,7 @@ function client.request(request)
     -- If the request method is not GET then we have to build the method in our own
     -- See: https://github.com/Lua-cURL/Lua-cURLv3/issues/156
     local method = request.request.method
-    if vim.tbl_contains({ "POST", "PUT", "PATCH", "TRACE", "OPTIONS", "DELETE" }, method) then
+    if utils.tbl_contains({ "POST", "PUT", "PATCH", "TRACE", "OPTIONS", "DELETE" }, method) then
       req:setopt_post(true)
       req:setopt_customrequest(method)
     end
@@ -234,11 +232,11 @@ function client.request(request)
     -- Request body
     --
     -- Create a copy of the request body table to remove the unneeded `__TYPE` metadata field later
-    local body = vim.deepcopy(request.body)
+    local body = utils.deepcopy(request.body)
     if request.body.__TYPE == "json" then
       body.__TYPE = nil
 
-      local json_body_string = vim.json.encode(body)
+      local json_body_string = utils.json.encode(body)
       req:setopt_postfields(json_body_string)
     elseif request.body.__TYPE == "xml" then
       local ok, xml2lua = pcall(require, "xml2lua")
@@ -302,7 +300,7 @@ function client.request(request)
       ret.script = request.script
     else
       ---@diagnostic disable-next-line need-check-nil
-      logger:error("Something went wrong when making the request with cURL:\n" .. curl_error(err:no()))
+      log.error("Something went wrong when making the request with cURL:\n" .. curl_error(err:no()))
       return {}
     end
     req:close()

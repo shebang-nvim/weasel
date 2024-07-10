@@ -11,7 +11,6 @@ local promise = require "promise"
 ---comment
 ---@param params weasel.core.HTTPRequestParams
 function Request.get(params)
-  vim.print("Request.get (promise): ", params)
   return promise:new(function(resolve, reject)
     -- log.debug("Request.get (promise): ", params)
     local data = curl.request {
@@ -25,7 +24,6 @@ function Request.get(params)
       start = true,
       body = {},
     }
-    -- vim.print(data)
     resolve(require("weasel.core.response").create(data))
   end)
 end

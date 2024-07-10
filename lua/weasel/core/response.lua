@@ -4,6 +4,7 @@ local Response = {}
 -- local cjson = require "cjson"
 local async = require "async"
 local promise = require "promise"
+local utils = require "weasel.core.utils"
 
 ---@class weasel.core.HTTPResponseData
 ---@field code integer
@@ -20,7 +21,7 @@ function Response.create(data)
     local obj = {}
 
     -- obj.body = cjson.decode(data.body)
-    obj.body = vim.json.decode(data.body)
+    obj.body = utils.json.decode(data.body)
     obj.url = data.url
     obj.code = data.code
     obj.method = data.method
