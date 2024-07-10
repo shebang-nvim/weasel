@@ -92,9 +92,6 @@ local function make_service_requestor(opts)
         args = { args }
       end
       return async(function()
-        log.debug("make_service_requestor args: ", args)
-        vim.print(args)
-
         local method = t.endpoint.method:lower()
         local url_params = utils.url_params(utils.tbl_keys(t.endpoint.parameters), args)
         if not utils.endswith(t.endpoint.url, "/") then
