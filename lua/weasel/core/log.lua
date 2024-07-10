@@ -160,4 +160,9 @@ end
 
 -- }}}
 
+--- TODO: provide configuration using environment variables
+if not log.info then
+  log.new(log.get_default_config(), true)
+end
+
 return log

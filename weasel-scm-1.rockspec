@@ -23,8 +23,12 @@ dependencies = {
   "tableshape",
   "luasocket",
   "luasec",
+  "promise-async",
   "nvim-nio ~> 1.7",
   "pathlib.nvim ~> 2.2",
+  "lua-curl",
+  "mimetypes",
+  "xml2lua",
 }
 test_dependencies = {
   "busted",
@@ -55,9 +59,5 @@ build = {
     unix = make_plat "unix",
     macosx = make_plat "macosx",
   },
-  copy_directories = {
-    "docs",
-    "samples",
-    "test",
-  },
+  copy_directories = {},
 }
