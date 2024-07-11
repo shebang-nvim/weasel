@@ -3,17 +3,29 @@
 ## Quickstart
 
 ```lua
-local weasel = require("weasel")
-local datamuse = weasel.client.datamuse()
+--- @param data weasel.provider.datamuse.ep.SoundsLikeResponse[]
+local function show_words(data)
+  for _, value in ipairs(data) do
+    print(string.format("word: %s (score: %s, syllables: %s)", value.word, value.score, value.numSyllables))
+  end
+end
 
--- sync
-local words = datamuse.sounds_like("house")
+-- load library using defaults
+local weasel = require("weasel").setup()
 
--- async
+-- get datamuse client
+local client = weasel.client "datamuse"
 
-weasel.run(function()
-  local words = datamuse.sounds_like("house")
-end)
+client.methods
+  .sounds_like("house")
+  :thenCall(function(data)
+    show_words(data.body)
+  end, function(reason)
+    print("client ERROR: ", reason)
+  end)
+  :finally(function(e)
+    print(e and string.format("finally: %s", e) or "")
+  end)
 ```
 
 ## Providers
