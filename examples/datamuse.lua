@@ -6,13 +6,27 @@ end
 local root = project_root()
 
 vim.opt.runtimepath:append(root)
-local log = require "weasel.core.log"
-local client = require("weasel.core.client").Client.get "datamuse"
 
-local result = client.methods.sounds_like "house"
--- vim.print(result)
-result:thenCall(function(data)
-  vim.print(">>>>>>>>>>>>>>>>>>>>>>>>>>> fullfilled", data)
-end, function(reason)
-  vim.print("client ERROR: ", reason)
-end)
+--- @param data weasel.provider.datamuse.ep.SoundsLikeResponse[]
+local function show_words(data)
+  for _, value in ipairs(data) do
+    print(string.format("word: %s (score: %s, syllables: %s)", value.word, value.score, value.numSyllables))
+  end
+end
+
+-- load library using defaults
+local weasel = require("weasel").setup()
+
+-- get datamuse client
+local client = weasel.client "datamuse"
+
+client.methods
+  .sounds_like("house")
+  :thenCall(function(data)
+    show_words(data.body)
+  end, function(reason)
+    print("client ERROR: ", reason)
+  end)
+  :finally(function(e)
+    print(e and string.format("finally: %s", e) or "")
+  end)
