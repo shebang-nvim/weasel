@@ -23,4 +23,10 @@ return {
     ROOT = { "spec/integration" },
     verbose = true,
   },
+  integration_lua = {
+    lua = "lua5.1",
+    tags = "integration",
+    ROOT = { "spec/integration" },
+    verbose = true,
+  },
 }

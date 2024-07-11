@@ -1,6 +1,5 @@
 local core = require "weasel.core"
-local config, log, modules = core.config, core.log, core.modules
-local utils = require "weasel.core.utils"
+local log = core.log
 
 ---@class weasel.loader
 local loader = {}

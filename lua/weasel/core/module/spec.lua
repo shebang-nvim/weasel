@@ -1,3 +1,4 @@
+---@class weasel.core.module.spec
 local M = {}
 
 local types = require("tableshape").types
@@ -11,6 +12,7 @@ M.schema.composables = {}
 M.schema.composables.module_types = types.one_of { types.literal "provider", types.literal "auth" }
 M.schema.composables.url = types.one_of { types.string, types.func }
 
+---@class weasel.module.schema.base
 M.schema.module = types.shape {
   type = M.schema.composables.module_types,
   name = types.string,
@@ -23,6 +25,7 @@ M.schema.module = types.shape {
 
 M.schema.modules = {}
 
+---@class weasel.module.schema.provider
 M.schema.modules.provider = types.shape {
   services = types.map_of(
     types.string,
@@ -39,9 +42,13 @@ M.schema.modules.provider = types.shape {
   ),
 }
 
+---@class weasel.module.ModuleSpec:weasel.module.ModuleBase
+---@field validate fun()
+
 ---comment
 ---@param type string
 ---@param data table
+---@return weasel.module.ModuleSpec
 M.create = function(type, data)
   if not M.schema.modules[type] then
     error("no such shape for type " .. tostring(type))
@@ -51,7 +58,6 @@ M.create = function(type, data)
 
   local obj = {
     spec = data,
-    shape = M.schema.modules[type],
     validate = function()
       assert(M.schema.module(data))
       assert(M.schema.modules[type](data.spec))
@@ -61,6 +67,8 @@ M.create = function(type, data)
 
   return obj
 end
+
+M.bearer_token = function(kind) end
 
 if not loaded then
   for key, _ in pairs(M.schema.modules) do

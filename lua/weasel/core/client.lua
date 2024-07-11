@@ -61,7 +61,7 @@ Client = setmetatable({}, { ---@diagnostic disable-line: cast-local-type
 -- Client.__index = Client
 
 ---comment
----@param module weasel.core.module.Module
+---@param module weasel.module.Module
 ---@return weasel.core.Client
 function Client:new(module)
   if module.type ~= "provider" then
@@ -108,7 +108,7 @@ end
 Client.methods = {}
 
 ---comment
----@param module weasel.core.module.Module
+---@param module weasel.module.Module
 ---@return weasel.core.Client
 function Client.from_module(module)
   if type(module.setup) == "function" then
@@ -150,7 +150,7 @@ function Client.get(name, vendor_tag)
   ---@type weasel.module.handle|string
   local handle
 
-  ---@type weasel.core.module.Module
+  ---@type weasel.module.Module
   local module
 
   local Module = require "weasel.core.module.module"

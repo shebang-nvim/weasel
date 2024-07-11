@@ -1,16 +1,18 @@
----@class weasel.core.module.Module
+---@class weasel.core.module.module
 local Module = {}
 
 local log = require "weasel.core.log"
 local loader = require "weasel.core.module.loader"
 
----@class weasel.core.module.Module
+---@class weasel.module.ModuleBase
 ---@field name string
 ---@field setup fun(config:table)
 ---@field post_load fun()
 ---@field type string
 ---@field spec table
----@overload fun(...):weasel.core.module.Module
+
+---@class weasel.module.Module:weasel.module.ModuleBase
+---@overload fun(...):weasel.module.Module
 Module = setmetatable({}, { ---@diagnostic disable-line: cast-local-type
   __call = function(t, ...)
     return Module:new(...)
@@ -18,7 +20,7 @@ Module = setmetatable({}, { ---@diagnostic disable-line: cast-local-type
 })
 -- Module.__index = Module
 
----@class weasel.core.module.Spec
+---@class weasel.module.Spec
 local module_spec = {
   name = "",
   setup = function() end,
@@ -29,7 +31,7 @@ local module_spec = {
 
 ---comment
 ---@param raw_module table
----@return weasel.core.module.Module
+---@return weasel.module.Module
 function Module:new(raw_module)
   local obj = {
     name = raw_module.spec.name,
@@ -40,7 +42,7 @@ function Module:new(raw_module)
     spec = raw_module.spec.spec,
   }
 
-  ---@type weasel.core.module.Module
+  ---@type weasel.module.Module
   obj = setmetatable(obj, {
     __index = Module,
   })
@@ -50,7 +52,7 @@ end
 
 ---comment
 --- @param handle weasel.module.handle
---- @return boolean, weasel.core.module.Module
+--- @return boolean,weasel.module.Module|string
 function Module.load(handle)
   local ok, mod = loader.load_module(handle)
   if not ok then
@@ -66,7 +68,7 @@ end
 --- Returns a module from the cache or loads the module if not
 --- loaded. Raises an error of loading fails.
 --- @param handle weasel.module.handle
---- @return weasel.core.module.Module
+--- @return weasel.module.Module
 function Module.get(handle)
   local ok, mod = Module.load(handle)
   if not ok then

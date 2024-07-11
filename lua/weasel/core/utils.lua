@@ -10,6 +10,7 @@ utils.tbl_values = vim_compat.tbl_values
 utils.tbl_isempty = vim_compat.tbl_isempty
 utils.tbl_contains = vim_compat.tbl_contains
 utils.tbl_deep_extend = vim_compat.tbl_deep_extend
+utils.is_callable = vim_compat.is_callable
 utils.validate = vim_compat.validate
 utils.deepcopy = vim_compat.deepcopy
 utils.endswith = vim_compat.endswith
@@ -33,6 +34,34 @@ function utils.is_minimum_version(major, minor, patch)
     return patch < version.patch
   end
   return true
+end
+
+--- Gets the current operating system.
+--- @return weasel.OperatingSystem
+function utils.get_os_info()
+  local os = vim.loop.os_uname().sysname:lower()
+
+  if os:find "windows_nt" then
+    return "windows"
+  elseif os == "darwin" then
+    return "mac"
+  elseif os == "linux" then
+    local f = io.open("/proc/version", "r")
+    if f ~= nil then
+      local _version = f:read "*all"
+      f:close()
+      if _version:find "WSL2" then
+        return "wsl2"
+      elseif _version:find "microsoft" then
+        return "wsl"
+      end
+    end
+    return "linux"
+  elseif os:find "bsd" then
+    return "bsd"
+  end
+
+  error "[weasel]: Unable to determine the currently active operating system!"
 end
 
 ---comment

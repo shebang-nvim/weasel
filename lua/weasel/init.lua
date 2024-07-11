@@ -27,11 +27,13 @@
 --- Initialization logic of this library
 ---
 
----@class weasel
----@field client fun(...:any):table
----@field config weasel.configuration
+--- @class weasel
+--- @field client fun(...:any):table
+--- @field config weasel.configuration
+--- @field os_info weasel.OperatingSystem The operating system that weasel is currently running under.
+--- @field pathsep "\\"|"/" The operating system that weasel is currently running under.
 local weasel = {
-  __class = "weasel",
+  initialized = false,
 }
 local utils = require "weasel.core.utils"
 
@@ -83,15 +85,29 @@ function weasel.setup(cfg)
 
   config.user_config = utils.tbl_deep_extend("force", config.user_config, cfg)
   weasel.config = config
+  weasel.initialized = true
 
+  weasel.os_info = utils.get_os_info()
+
+  weasel.path_sep = weasel.os_info == "windows" and "\\" or "/"
   return init(config)
 end
 
--- return setmetatable({}, {
---   __index = function(_, k)
---     if k == "setup" then
---       return weasel.setup
+-- TODO: maby use the following pattern to manage config
+--
+-- ---@param opts? LazyVimOptions
+-- function M.setup(opts)
+--   options = vim.tbl_deep_extend("force", defaults, opts or {}) or {}
+-- end
+--
+-- setmetatable(M, {
+--   __index = function(_, key)
+--     if options == nil then
+--       return vim.deepcopy(defaults)[key]
 --     end
+--     ---@cast options LazyVimConfig
+--     return options[key]
 --   end,
 -- })
+--
 return weasel

@@ -30,7 +30,17 @@
 
 --- weasle types
 --- -------------------------------------------------------------------------------
----
+
+--- @alias weasel.OperatingSystem
+--- | "windows"
+--- | "wsl"
+--- | "wsl2"
+--- | "mac"
+--- | "linux"
+--- | "bsd"
+
+--- @alias weasel.module.vendor_tag 'builtin'|'ext'
+--- @alias weasel.module.type 'provider'|'auth'
 
 --- @class weasel.module.spec.public
 
@@ -38,8 +48,8 @@
 --- @field name string
 --- @field short_name string
 --- @field path string
---- @field vendor_tag string
---- @field type string
+--- @field vendor_tag weasel.module.vendor_tag
+--- @field type weasel.module.type
 
 --- Defines both a public and private configuration for a weasle module.
 --- Public configurations may be tweaked by the user from the `weasle.setup()` function,
@@ -53,7 +63,7 @@
 --- Defines a module.
 --- @class (exact) weasel.module
 --- @field spec? weasel.module.spec The configuration for the module class.
---- @field type weasel.module_type
+--- @field type weasel.module.type
 --- @field name string The name of the module.
 --- @field path string The full path to the module (a more verbose version of `name`).
 --- @field post_load? fun() Function that is invoked after all modules are loaded. Useful if you want the Neorg environment to be fully set up before performing some task.

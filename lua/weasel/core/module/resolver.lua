@@ -1,24 +1,24 @@
----@class weasel.core.module.Loader
+---@class weasel.core.module.resolver
 local Resolver = {}
 
 local utils = require "weasel.core.utils"
 
---- @enum wease.core.module.VendorTags
 Resolver.vendor_tags = {
   "builtin",
   "ext",
 }
---- @enum wease.core.module.Types
 Resolver.module_types = {
   "provider",
   "auth",
 }
 
+--- @alias weasel.module.resolver_retval weasel.module.handle|string
+
 --- resolve a module name to a Lua path
 --- 1. "provider.datamuse" -> "weasel.modules.provider.core.datamuse"
 --- @param name string
 --- @param vendor_tag? string
---- @return boolean,weasel.module.handle|string
+--- @return boolean,weasel.module.resolver_retval
 function Resolver.resolve_name(name, vendor_tag)
   vendor_tag = vendor_tag or "builtin"
 

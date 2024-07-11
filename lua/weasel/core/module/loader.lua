@@ -1,8 +1,9 @@
----@class weasel.core.module.Loader
+---@class weasel.core.module.loader
 local Loader = {}
 
 local _registry = {
   modules = {
+    ---@type table<string,weasel.module.ModuleSpec>
     loaded = {},
   },
   count_loaded = 0,
@@ -19,7 +20,7 @@ end
 
 ---comment
 --- @param handle weasel.module.handle
---- @return boolean
+--- @return weasel.module.ModuleSpec
 function Loader.get(handle)
   return _registry.modules.loaded[handle.path]
 end
@@ -27,10 +28,10 @@ end
 --- resolve a module name to a Lua path
 --- 1. "provider.datamuse" -> "weasel.modules.provider.core.datamuse"
 --- @param handle weasel.module.handle
---- @return boolean,any
+--- @return boolean,weasel.module.ModuleSpec
 function Loader.load_module(handle)
   if Loader.is_loaded(handle) then
-    return Loader.get(handle)
+    return true, Loader.get(handle)
   end
 
   local ok, module = pcall(require, handle.path)
